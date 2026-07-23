@@ -127,7 +127,7 @@ class CreateCallModal(Modal, title='Create New Def Call'):
     )
     coords_input = TextInput(
         label='Link of cordinates',
-        placeholder='e.g., 45|-23 or https://...',
+        placeholder='e.g., https://...',
         required=True
     )
 
