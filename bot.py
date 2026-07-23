@@ -1,9 +1,29 @@
 import discord
 import os
 import re
+import http.server
+import socketserver
+import threading
 from discord.ext import commands
 from discord.ui import Modal, TextInput, View, Button
 from dotenv import load_dotenv
+
+# --- טริק ל-Render: שרת ווב קטנטן ברקע כדי לספק את דרישת הפורטים בחינם ---
+PORT = int(os.environ.get("PORT", 8080))
+
+class SimpleHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Travian Bot is alive and running!")
+
+def run_server():
+    with socketserver.TCPServer(("", PORT), httpd=SimpleHandler) as httpd:
+        httpd.serve_forever()
+
+# מריצים את השרת בחוט נפרד (Background Thread) כדי שלא יפריע לבוט
+threading.Thread(target=run_server, daemon=True).start()
+# ------------------------------------------------------------------
 
 # טעינת הטוקן מהקובץ המוסתר
 load_dotenv()
@@ -121,13 +141,12 @@ class CreateCallModal(Modal, title='Create New Def Call'):
         landing_time = self.time_input.value
         coords_raw = self.coords_input.value
 
-        # חילוץ קואורדינטות מתוך קישור אם הוזן כזה
         match = re.search(r'x=(-?\d+)&y=(-?\d+)', coords_raw)
         if match:
             x, y = match.groups()
-            coords_formatted = f"[{x}|{y}]({coords_raw})" # יצירת לינק לחיץ למרקדאון
+            coords_formatted = f"[{x}|{y}]({coords_raw})" 
         else:
-            coords_formatted = coords_raw # אם הזינו רק מספרים, נציג אותם כרגיל
+            coords_formatted = coords_raw 
 
         embed = discord.Embed(
             title="⚔️ Active Def Call",
@@ -168,5 +187,4 @@ async def setup(ctx):
     )
     await ctx.send(embed=embed, view=DashboardView())
 
-# הפעלה בטוחה דרך המשתנה שהבאנו מהקובץ המוסתר
 bot.run(TOKEN)
